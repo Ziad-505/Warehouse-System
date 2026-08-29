@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Warehouse {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  location      String?     
+
+  products      Product[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?       
+}
+
+model Category {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  products      Product[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+}
+
+
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  price         Decimal         @db.Decimal(10, 2)        
+  quantity       Int             @default(0)    
+
+  categoryId    Int?
+  category      Category?       @relation(fields: [categoryId], references: [id])
+
+  warehouseId   Int?
+  warehouse     Warehouse?      @relation(fields: [warehouseId], references: [id])
+
+  movements     StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?         
+
+}
+
+model StockMovement {
+  id            Int             @id @default(autoincrement())
+  type          MovementType
+  quantity       Int
+  reason        String?
+
+  productId     Int
+  product       Product         @relation(fields: [productId], references: [id])
+  createdAt     DateTime        @default(now())
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUST
+}
