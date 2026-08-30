@@ -1,6 +1,8 @@
 import express from "express";
 import categoryRouter from "./routes/categoryRouter.js";
-import warehouseRouter from "./routes/warehouseRouter.js"
+import warehouseRouter from "./routes/warehouseRouter.js";
+import productRouter from "./routes/productRouter.js";
+import stockMovementRouter from "./routes/stockMovementRouter.js";
 
 const app = express();
 
@@ -12,6 +14,8 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/categories", categoryRouter);
 app.use("/api/warehouses", warehouseRouter);
+app.use("/api/products", productRouter);
+app.use("/api/stock-movements", stockMovementRouter);
 
 
 
