@@ -6,7 +6,12 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "generate": "prisma generate",
+    "migrate": "prisma migrate deploy",
+    "studio": "prisma studio",
     "seed": "node prisma/seed.js"
   },
   "keywords": [],
