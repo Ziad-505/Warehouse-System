@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { AppError } from "../lib/AppError.js";
 
 export const getAllProducts = async () => {
     const products = await prisma.product.findMany({ where: { deletedAt: null }, include: { category: true, warehouse: true }, });
@@ -15,13 +16,13 @@ export const createProduct = async ({ name, price, quantity, categoryId, warehou
         const category = await prisma.category.findFirst({
             where: { id: Number(categoryId), deletedAt: null },
         });
-        if (!category) throw new Error("Category not found");
+        if (!category) throw new AppError(400, "Category not found");
     }
     if(warehouseId != null){
         const warehouse = await prisma.warehouse.findFirst({
             where: { id: Number(warehouseId), deletedAt: null },
         });
-        if (!warehouse) throw new Error("Warehouse not found");
+        if (!warehouse) throw new AppError(400, "Warehouse not found");
     }
 
     const newProduct = await prisma.product.create({ data: { name, price, quantity: quantity ?? 0, categoryId: categoryId != null ? Number(categoryId) : null, warehouseId: warehouseId != null ? Number(warehouseId) : null,  }});
@@ -33,13 +34,13 @@ export const updateProduct = async (id, { name, price, categoryId, warehouseId }
         const category = await prisma.category.findFirst({
             where: { id: Number(categoryId), deletedAt: null },
         });
-        if (!category) throw new Error("Category not found");
+        if (!category) throw new AppError(400, "Category not found");
     }
     if(warehouseId != null){
         const warehouse = await prisma.warehouse.findFirst({
             where: { id: Number(warehouseId), deletedAt: null },
         });
-        if (!warehouse) throw new Error("Warehouse not found");
+        if (!warehouse) throw new AppError(400, "Warehouse not found");
     }
     const updatedProduct = await prisma.product.update({ where: { id: Number(id), deletedAt: null,  }, data: { name, price, categoryId: categoryId != null ? Number(categoryId) : categoryId, warehouseId: warehouseId != null ? Number(warehouseId) : warehouseId }});
     return updatedProduct;
