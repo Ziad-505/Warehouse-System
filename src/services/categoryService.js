@@ -1,8 +1,15 @@
 import { prisma } from "../lib/prisma.js";
 
-export const getAllCategories = async () => {
-    const categories = await prisma.category.findMany({ where: { deletedAt: null }});
-    return categories;
+export const getAllCategories = async ({ page, limit, search }) => {
+    const where = {
+        deletedAt: null,
+        ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+    };
+    const [data, total] = await Promise.all([
+        prisma.category.findMany({ where, skip: (page - 1) * limit, take: limit }),
+        prisma.category.count({ where }),
+    ]);
+    return { data, meta: { page, limit, total } };
 };
 
 export const getCategoryById = async (id) => {

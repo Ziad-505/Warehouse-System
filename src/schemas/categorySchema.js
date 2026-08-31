@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { idParam } from "./common.js";
 
-export const idParam = z.object({
-    id: z.coerce.number().int().positive(),
-});
+
+export const categoryIdParam = idParam;
 
 export const createCategoryBody = z.strictObject({
     name: z.string().trim().min(1, "name is required").max(100),

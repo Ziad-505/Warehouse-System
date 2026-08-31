@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { idParam } from "./common.js";
 
-export const idParam = z.object({
-    id: z.coerce.number().int().positive(),
-});
+
+export const productIdParam = idParam;
 
 export const createProductBody = z.strictObject({
     name: z.string().trim().min(1, "name is required").max(150),
@@ -13,6 +13,7 @@ export const createProductBody = z.strictObject({
 });
 
 export const updateProductBody = createProductBody
+    .omit({ quantity: true })
     .partial()
     .refine((data) => Object.keys(data).length > 0, {
         message: "Provide at least one field to update",
