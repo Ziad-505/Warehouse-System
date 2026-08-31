@@ -1,65 +1,28 @@
 import * as warehouseService from "../services/warehouseService.js";
+import { AppError } from "../lib/AppError.js";
 
 export const getAllWarehouses = async (req, res) => {
-    try {
-        const wareHouses = await warehouseService.getAllWarehouses();
-        res.json(wareHouses);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    const warehouses = await warehouseService.getAllWarehouses();
+    res.json(warehouses);
 };
-
 
 export const getWarehouseById = async (req, res) => {
-    try {
-        const wareHouses = await warehouseService.getWarehouseById(req.params.id);
-        if (!wareHouses) {
-            return res.status(404).json({ error: "Warehouse not found" });
-        }
-        res.json(wareHouses);
-    } catch (error) {
-        if (error.code === "P2025") {
-            return res.status(404).json({ error: "Warehouse not found" });
-          }
-        res.status(500).json({ message: error.message });
-    }
+    const warehouse = await warehouseService.getWarehouseById(req.params.id);
+    if (!warehouse) throw new AppError(404, "Warehouse not found");
+    res.json(warehouse);
 };
-
-
-
 
 export const createWarehouse = async (req, res) => {
-    try {
-        const wareHouses = await warehouseService.createWarehouse(req.body);
-        res.status(201).json(wareHouses);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    const warehouse = await warehouseService.createWarehouse(req.body);
+    res.status(201).json(warehouse);
 };
-
-
 
 export const updateWarehouse = async (req, res) => {
-    try {
-        const wareHouses = await warehouseService.updateWarehouse(req.params.id, req.body);
-        res.json(wareHouses);
-    } catch (error) {
-        if (error.code === "P2025") {
-            return res.status(404).json({ error: "Warehouse not found" });
-          }
-        res.status(500).json({ message: error.message });
-    }
+    const warehouse = await warehouseService.updateWarehouse(req.params.id, req.body);
+    res.json(warehouse);
 };
 
-
 export const deleteWarehouse = async (req, res) => {
-    try {
-        const wareHouses = await warehouseService.deleteWarehouse(req.params.id);
-        res.json(wareHouses);
-    } catch (error) {
-        if (error.code === "P2025") {
-            return res.status(404).json({ error: "Warehouse not found" });
-            }
-        res.status(500).json({ message: error.message });
-    }
+    const warehouse = await warehouseService.deleteWarehouse(req.params.id);
+    res.json(warehouse);
 };

@@ -1,22 +1,23 @@
 import { prisma } from "../lib/prisma.js";
+import { AppError } from "../lib/AppError.js";
 
 const MOVEMENT_TYPES = ["IN", "OUT", "ADJUST"];
 
 export const createStockMovement = async ({ productId, type, quantity, reason }) => {
     const id = Number(productId);
-    if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid productId");
+    if (!Number.isInteger(id) || id <= 0) throw new AppError(400, "Invalid productId");
 
-    if (!MOVEMENT_TYPES.includes(type)) throw new Error("Invalid movement type");
+    if (!MOVEMENT_TYPES.includes(type)) throw new AppError(400, "Invalid movement type");
 
-    if (quantity === null || quantity === undefined || quantity === "") throw new Error("Quantity is required");
+    if (quantity === null || quantity === undefined || quantity === "") throw new AppError(400, "Quantity is required");
     const qty = Number(quantity);
-    if (!Number.isInteger(qty)) throw new Error("Quantity must be an integer");
-    if (type === "ADJUST" && qty < 0) throw new Error("Quantity cannot be negative");
-    if (type !== "ADJUST" && qty <= 0) throw new Error("Quantity must be greater than zero");
+    if (!Number.isInteger(qty)) throw new AppError(400, "Quantity must be an integer");
+    if (type === "ADJUST" && qty < 0) throw new AppError(400, "Quantity cannot be negative");
+    if (type !== "ADJUST" && qty <= 0) throw new AppError(400, "Quantity must be greater than zero");
 
     return prisma.$transaction(async (tx) => {
         const product = await tx.product.findFirst({ where: { id, deletedAt: null } });
-        if (!product) throw new Error("Product not found");
+        if (!product) throw new AppError(404, "Product not found");
 
 
         const updates = {
@@ -26,7 +27,9 @@ export const createStockMovement = async ({ productId, type, quantity, reason })
         };
 
         const { count } = await tx.product.updateMany(updates[type]);
-        if (count === 0) throw new Error(type === "OUT" ? "Insufficient stock" : "Product not found");
+        if (count === 0) throw type === "OUT"
+            ? new AppError(409, "Insufficient stock")
+            : new AppError(404, "Product not found");
 
         const movement = await tx.stockMovement.create({ data: { type, quantity: qty, reason, productId: id } });
         const { quantity: newQuantity } = await tx.product.findUnique({ where: { id }, select: { quantity: true } });
