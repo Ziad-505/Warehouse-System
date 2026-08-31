@@ -1,19 +1,8 @@
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../lib/AppError.js";
 
-const MOVEMENT_TYPES = ["IN", "OUT", "ADJUST"];
 
 export const createStockMovement = async ({ productId, type, quantity, reason }) => {
-    const id = Number(productId);
-    if (!Number.isInteger(id) || id <= 0) throw new AppError(400, "Invalid productId");
-
-    if (!MOVEMENT_TYPES.includes(type)) throw new AppError(400, "Invalid movement type");
-
-    if (quantity === null || quantity === undefined || quantity === "") throw new AppError(400, "Quantity is required");
-    const qty = Number(quantity);
-    if (!Number.isInteger(qty)) throw new AppError(400, "Quantity must be an integer");
-    if (type === "ADJUST" && qty < 0) throw new AppError(400, "Quantity cannot be negative");
-    if (type !== "ADJUST" && qty <= 0) throw new AppError(400, "Quantity must be greater than zero");
 
     return prisma.$transaction(async (tx) => {
         const product = await tx.product.findFirst({ where: { id, deletedAt: null } });
