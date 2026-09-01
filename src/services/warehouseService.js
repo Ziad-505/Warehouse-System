@@ -1,28 +1,29 @@
 import { prisma } from "../lib/prisma.js";
 
+// Services return domain data or null. The HTTP shape is the controller's job:
+// wrapping null in { data: null } made "not found" indistinguishable from "found".
+
 export const getAllWarehouses = async () => {
     const warehouses = await prisma.warehouse.findMany({ where: { deletedAt: null }});
-    return { data: warehouses };
+    return warehouses;
 };
 
 export const getWarehouseById = async (id) => {
-    const wareHouse = await prisma.warehouse.findFirst({ where: { id, deletedAt: null }});
-    return { data: wareHouse };
+    const warehouse = await prisma.warehouse.findFirst({ where: { id, deletedAt: null }});
+    return warehouse;
 };
 
 export const createWarehouse = async ({ name, location }) => {
-    const wareHouse = await prisma.warehouse.create({ data: { name, location }});
-    return { data: wareHouse };
+    const warehouse = await prisma.warehouse.create({ data: { name, location }});
+    return warehouse;
 };
 
 export const updateWarehouse = async (id, { name, location }) => {
     const updatedWarehouse = await prisma.warehouse.update({ where: { id, deletedAt: null }, data: { name, location }});
-    return { data: updatedWarehouse };
+    return updatedWarehouse;
 };
 
 export const deleteWarehouse = async (id) => {
     const deletedWarehouse = await prisma.warehouse.update({ where: { id, deletedAt: null }, data: { deletedAt: new Date() }});
-    return { data: deletedWarehouse };
+    return deletedWarehouse;
 };
-
-
