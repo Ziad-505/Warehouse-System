@@ -5,14 +5,16 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev": "node --watch src/server.js",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "generate": "prisma generate",
     "migrate": "prisma migrate deploy",
     "studio": "prisma studio",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "smoke": "bash scripts/smoke.sh"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +28,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "prisma": "^7.10.0"
+    "prisma": "^7.10.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.11"
   }
 }

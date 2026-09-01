@@ -42,8 +42,8 @@ export const updateProduct = async (id, { name, price, categoryId, warehouseId }
         });
         if (!warehouse) throw new AppError(400, "Warehouse not found");
     }
-    const updatedProduct = await prisma.product.update({ where: { id, deletedAt: null }, data: { name, price, categoryId: categoryId != null ? categoryId : categoryId, warehouseId: warehouseId != null ? warehouseId : warehouseId }});
-    return { data: updatedProduct, quantity: updatedProduct.quantity };
+    const updatedProduct = await prisma.product.update({ where: { id, deletedAt: null }, data: { name, price, categoryId, warehouseId }});
+    return updatedProduct;
 };
 
 export const deleteProduct = async (id) => {
