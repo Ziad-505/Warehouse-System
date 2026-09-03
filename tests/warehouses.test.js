@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
-import request from "supertest";
-import app from "../src/app.js";
+import { api } from "./helpers.js";
 import { makeProduct, makeWarehouse, makeStockLevel } from "./factories.js";
 describe("POST /api/warehouses", () => {
     it("creates a warehouse", async () => {
-        const res = await request(app)
+        const res = await api()
             .post("/api/warehouses")
             .send({ name: "Warehouse 1" });
 
@@ -14,7 +13,7 @@ describe("POST /api/warehouses", () => {
     });
 
     it("trims whitespace off the name", async () => {
-        const res = await request(app)
+        const res = await api()
             .post("/api/warehouses")
             .send({ name: "  Warehouse 1  " });
 
@@ -23,7 +22,7 @@ describe("POST /api/warehouses", () => {
     });
 
     it("rejects an empty body", async () => {
-        const res = await request(app).post("/api/warehouses").send({});
+        const res = await api().post("/api/warehouses").send({});
 
         expect(res.status).toBe(400);
         expect(res.body.error).toBe("Validation failed");
@@ -31,7 +30,7 @@ describe("POST /api/warehouses", () => {
     });
 
     it("rejects an unknown key", async () => {
-        const res = await request(app)
+        const res = await api()
             .post("/api/warehouses")
             .send({ nmae: "Tools" });
 
@@ -39,8 +38,8 @@ describe("POST /api/warehouses", () => {
     });
 
     it("rejects a duplicate name with 409", async () => {
-        await request(app).post("/api/warehouses").send({ name: "Warehouse 1" });
-        const res = await request(app).post("/api/warehouses").send({ name: "Warehouse 1" });
+        await api().post("/api/warehouses").send({ name: "Warehouse 1" });
+        const res = await api().post("/api/warehouses").send({ name: "Warehouse 1" });
 
         expect(res.status).toBe(409);
     });
@@ -48,27 +47,27 @@ describe("POST /api/warehouses", () => {
 
 describe("GET /api/warehouses/:id", () => {
     it("coerces a numeric id", async () => {
-        const created = await request(app).post("/api/warehouses").send({ name: "Warehouse 1" });
-        const res = await request(app).get(`/api/warehouses/${created.body.id}`);
+        const created = await api().post("/api/warehouses").send({ name: "Warehouse 1" });
+        const res = await api().get(`/api/warehouses/${created.body.id}`);
 
         expect(res.status).toBe(200);
         expect(res.body.name).toBe("Warehouse 1");
     });
 
     it("rejects a non-numeric id with 400", async () => {
-        const res = await request(app).get("/api/warehouses/abc");
+        const res = await api().get("/api/warehouses/abc");
         expect(res.status).toBe(400);
     });
 
     it("returns 404 for an id that does not exist", async () => {
-        const res = await request(app).get("/api/warehouses/999999");
+        const res = await api().get("/api/warehouses/999999");
         expect(res.status).toBe(404);
     });
 });
 describe("PATCH /api/warehouses/:id", () => {
     it("updates the location", async () => {
-        const created = await request(app).post("/api/warehouses").send({ name: "Main" });
-        const res = await request(app)
+        const created = await api().post("/api/warehouses").send({ name: "Main" });
+        const res = await api()
             .patch(`/api/warehouses/${created.body.id}`)
             .send({ location: "Giza" });
 
@@ -77,8 +76,8 @@ describe("PATCH /api/warehouses/:id", () => {
     });
 
     it("rejects an empty patch", async () => {
-        const created = await request(app).post("/api/warehouses").send({ name: "Main" });
-        const res = await request(app).patch(`/api/warehouses/${created.body.id}`).send({});
+        const created = await api().post("/api/warehouses").send({ name: "Main" });
+        const res = await api().patch(`/api/warehouses/${created.body.id}`).send({});
 
         expect(res.status).toBe(400);
     });
@@ -92,7 +91,7 @@ describe("GET /api/warehouses/:id/stock", () => {
         await makeStockLevel(a.id, warehouse.id, 40);
         await makeStockLevel(b.id, warehouse.id, 6);
 
-        const res = await request(app).get(`/api/warehouses/${warehouse.id}/stock`);
+        const res = await api().get(`/api/warehouses/${warehouse.id}/stock`);
 
         expect(res.status).toBe(200);
         expect(res.body.data).toHaveLength(2);
@@ -106,7 +105,7 @@ describe("GET /api/warehouses/:id/stock", () => {
     // An empty warehouse is an empty list, not a 404. Only a missing warehouse 404s.
     it("returns an empty list for a warehouse holding nothing", async () => {
         const warehouse = await makeWarehouse();
-        const res = await request(app).get(`/api/warehouses/${warehouse.id}/stock`);
+        const res = await api().get(`/api/warehouses/${warehouse.id}/stock`);
 
         expect(res.status).toBe(200);
         expect(res.body.data).toEqual([]);
@@ -114,7 +113,7 @@ describe("GET /api/warehouses/:id/stock", () => {
     });
 
     it("404s for a warehouse that does not exist", async () => {
-        const res = await request(app).get("/api/warehouses/999999/stock");
+        const res = await api().get("/api/warehouses/999999/stock");
         expect(res.status).toBe(404);
     });
 });
@@ -123,7 +122,7 @@ describe("GET /api/warehouses", () => {
     it("paginates and reports the total", async () => {
         for (const n of [1, 2, 3]) await makeWarehouse({ name: `Paged-${n}` });
 
-        const res = await request(app).get("/api/warehouses?limit=2");
+        const res = await api().get("/api/warehouses?limit=2");
 
         expect(res.status).toBe(200);
         expect(res.body.data).toHaveLength(2);

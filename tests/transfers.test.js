@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import request from "supertest";
-import app from "../src/app.js";
+import { api } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 import { makeProduct, makeWarehouse, makeStockLevel } from "./factories.js";
 
@@ -26,7 +25,7 @@ describe("POST /api/stock-movements/transfer", () => {
         const { product, low, high } = await setup();
         await makeStockLevel(product.id, low.id, 40);
 
-        const res = await request(app).post("/api/stock-movements/transfer").send({
+        const res = await api().post("/api/stock-movements/transfer").send({
             productId: product.id,
             fromWarehouseId: low.id,
             toWarehouseId: high.id,
@@ -42,7 +41,7 @@ describe("POST /api/stock-movements/transfer", () => {
         const { product, low, high } = await setup();
         await makeStockLevel(product.id, low.id, 40);
 
-        await request(app).post("/api/stock-movements/transfer").send({
+        await api().post("/api/stock-movements/transfer").send({
             productId: product.id,
             fromWarehouseId: low.id,
             toWarehouseId: high.id,
@@ -75,7 +74,7 @@ describe("POST /api/stock-movements/transfer", () => {
         const { product, low, high } = await setup();
         await makeStockLevel(product.id, high.id, 6);
 
-        const res = await request(app).post("/api/stock-movements/transfer").send({
+        const res = await api().post("/api/stock-movements/transfer").send({
             productId: product.id,
             fromWarehouseId: high.id,
             toWarehouseId: low.id,
@@ -92,7 +91,7 @@ describe("POST /api/stock-movements/transfer", () => {
         const { product, low } = await setup();
         await makeStockLevel(product.id, low.id, 40);
 
-        const res = await request(app).post("/api/stock-movements/transfer").send({
+        const res = await api().post("/api/stock-movements/transfer").send({
             productId: product.id,
             fromWarehouseId: low.id,
             toWarehouseId: low.id,
@@ -107,7 +106,7 @@ describe("POST /api/stock-movements/transfer", () => {
         const { product, low } = await setup();
         await makeStockLevel(product.id, low.id, 40);
 
-        const res = await request(app).post("/api/stock-movements/transfer").send({
+        const res = await api().post("/api/stock-movements/transfer").send({
             productId: product.id,
             fromWarehouseId: low.id,
             toWarehouseId: 999999,
