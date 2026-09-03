@@ -97,3 +97,39 @@ export const transferStock = async ({ productId, fromWarehouseId, toWarehouseId,
             to: { warehouseId: toWarehouseId, quantity: applied.IN.quantity, movement: applied.IN.movement },
         };
     });
+
+export const getMovements = async ({ page, limit, productId, warehouseId, userId, type, from, to }) => {
+    // Prisma drops `undefined` filters entirely, so one object covers every
+    // combination of these four with no conditionals. That is the same rule
+    // that made `id: undefined` silently match everything in Stage 3 -- here it
+    // is exactly what we want.
+    const where = {
+        productId,
+        warehouseId,
+        userId,
+        type,
+        // createdAt needs the spread: { gte: undefined, lte: undefined } is an
+        // empty filter OBJECT, not an absent one, and Prisma rejects it.
+        ...(from || to ? { createdAt: { gte: from, lte: to } } : {}),
+    };
+
+    const [data, total] = await Promise.all([
+        prisma.stockMovement.findMany({
+            where,
+            include: {
+                product: { select: { id: true, name: true } },
+                warehouse: { select: { id: true, name: true } },
+                user: { select: { id: true, email: true } },
+            },
+            // A transfer writes both its movements inside one transaction, so
+            // their createdAt values tie. Without `id` as a second key the order
+            // is undefined and rows can repeat or vanish across pages.
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            skip: (page - 1) * limit,
+            take: limit,
+        }),
+        prisma.stockMovement.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
+};
