@@ -8,6 +8,7 @@ import { apiLimiter, authLimiter } from "./middleware/rateLimit.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
 import healthRouter from "./routes/healthRouter.js";
+import docsRouter from "./routes/docsRouter.js";
 import authRouter from "./routes/authRouter.js";
 import categoryRouter from "./routes/categoryRouter.js";
 import warehouseRouter from "./routes/warehouseRouter.js";
@@ -42,6 +43,10 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api", apiLimiter);
 
 app.use("/api/health", healthRouter);
+
+// Public by choice: this repo is meant to be read. On a private API you
+// would gate this behind auth or an env flag.
+app.use("/api/docs", docsRouter);
 
 // Public: you cannot present a token before you have one. The stricter limiter
 // sits here because these are the endpoints worth guessing against.
