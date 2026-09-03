@@ -1,5 +1,5 @@
 import { prisma } from "../src/lib/prisma.js";
-
+import { signAccessToken } from "../src/lib/tokens.js";
 // A fresh record every call. Names are unique so the @unique constraint on
 // `name` never fires by accident in a test that is not about duplicates.
 let counter = 0;
@@ -31,4 +31,18 @@ export const makeStockedProduct = async (quantity = 0) => {
     const [product, warehouse] = await Promise.all([makeProduct(), makeWarehouse()]);
     await makeStockLevel(product.id, warehouse.id, quantity);
     return { product, warehouse };
+};
+
+// Signs the token directly from the secret rather than going through
+// /auth/login. Setup should not depend on the endpoint under test -- if login
+// breaks you want the login tests to fail, not every test in the suite.
+export const makeUser = async (role = "ADMIN") => {
+    const user = await prisma.user.create({
+        data: {
+            email: `${unique("user")}@example.com`,
+            passwordHash: "x-not-a-valid-argon2-hash",
+            role,
+        },
+    });
+    return { user, token: signAccessToken(user) };
 };

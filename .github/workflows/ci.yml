@@ -26,6 +26,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://warehouse:localdev@localhost:5432/warehouse_test?schema=public
+      JWT_SECRET: ci-only-secret-not-used-anywhere-real
 
     steps:
       - uses: actions/checkout@v4

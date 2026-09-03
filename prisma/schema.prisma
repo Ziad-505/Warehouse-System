@@ -65,10 +65,15 @@ model StockMovement {
 
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
 
   @@index([productId, createdAt])
   @@index([warehouseId, createdAt])
+  @@index([userId, createdAt])
 }
 
 model StockLevel {
@@ -90,4 +95,36 @@ enum MovementType {
   IN
   OUT
   ADJUST
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  VIEWER
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  email        String @unique
+  passwordHash String
+  role         Role   @default(STAFF)
+
+  movements     StockMovement[]
+  refreshTokens RefreshToken[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
