@@ -15,7 +15,20 @@ export const makeWarehouse = (overrides = {}) =>
         data: { name: unique("Warehouse"), location: "Cairo", ...overrides },
     });
 
+// Products no longer carry a quantity -- stock lives on the product/warehouse pair.
 export const makeProduct = (overrides = {}) =>
     prisma.product.create({
-        data: { name: unique("Product"), price: "10.00", quantity: 0, ...overrides },
+        data: { name: unique("Product"), price: "10.00", ...overrides },
     });
+
+export const makeStockLevel = (productId, warehouseId, quantity = 0) =>
+    prisma.stockLevel.create({
+        data: { productId, warehouseId, quantity },
+    });
+
+// The common case: a product sitting in a warehouse with some stock.
+export const makeStockedProduct = async (quantity = 0) => {
+    const [product, warehouse] = await Promise.all([makeProduct(), makeWarehouse()]);
+    await makeStockLevel(product.id, warehouse.id, quantity);
+    return { product, warehouse };
+};
