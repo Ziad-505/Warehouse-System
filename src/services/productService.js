@@ -1,54 +1,63 @@
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../lib/AppError.js";
 
-export const getAllProducts = async () => {
-    const products = await prisma.product.findMany({ where: { deletedAt: null }, include: { category: true, warehouse: true }, });
-    return products;
+// Stock is no longer a column on Product, so every read that wants a quantity
+// has to come through the join table.
+const withStock = {
+    category: true,
+    stockLevels: {
+        select: {
+            quantity: true,
+            warehouse: { select: { id: true, name: true } },
+        },
+    },
 };
 
-export const getProductById = async (id) => {
-    const product = await prisma.product.findFirst({ where: { id, deletedAt: null }, include: { category: true, warehouse: true }, });
-    return product;
+export const getAllProducts = async ({ page, limit, search }) => {
+    const where = {
+        deletedAt: null,
+        ...(search ? { name: { contains: search, mode: "insensitive" } } : {}),
+    };
+    const [data, total] = await Promise.all([
+        prisma.product.findMany({
+            where,
+            include: withStock,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { id: "asc" },
+        }),
+        prisma.product.count({ where }),
+    ]);
+    return { data, meta: { page, limit, total } };
 };
 
-export const createProduct = async ({ name, price, quantity, categoryId, warehouseId }) => {
-    if(categoryId != null){
-        const category = await prisma.category.findFirst({
-            where: { id: categoryId, deletedAt: null },
-        });
-        if (!category) throw new AppError(400, "Category not found");
-    }
-    if(warehouseId != null){
-        const warehouse = await prisma.warehouse.findFirst({
-            where: { id: warehouseId, deletedAt: null },
-        });
-        if (!warehouse) throw new AppError(400, "Warehouse not found");
-    }
+export const getProductById = async (id) =>
+    prisma.product.findFirst({ where: { id, deletedAt: null }, include: withStock });
 
-    const newProduct = await prisma.product.create({ data: { name, price, quantity: quantity ?? 0, categoryId: categoryId != null ? categoryId : null, warehouseId: warehouseId != null ? warehouseId : null,  }});
-    return newProduct;
+const assertCategory = async (categoryId) => {
+    if (categoryId == null) return;
+    const category = await prisma.category.findFirst({
+        where: { id: categoryId, deletedAt: null },
+    });
+    if (!category) throw new AppError(400, "Category not found");
 };
 
-export const updateProduct = async (id, { name, price, categoryId, warehouseId }) => {
-    if(categoryId != null){
-        const category = await prisma.category.findFirst({
-            where: { id: categoryId, deletedAt: null },
-        });
-        if (!category) throw new AppError(400, "Category not found");
-    }
-    if(warehouseId != null){
-        const warehouse = await prisma.warehouse.findFirst({
-            where: { id: warehouseId, deletedAt: null },
-        });
-        if (!warehouse) throw new AppError(400, "Warehouse not found");
-    }
-    const updatedProduct = await prisma.product.update({ where: { id, deletedAt: null }, data: { name, price, categoryId, warehouseId }});
-    return updatedProduct;
+export const createProduct = async ({ name, price, categoryId }) => {
+    await assertCategory(categoryId);
+    return prisma.product.create({
+        data: { name, price, categoryId: categoryId ?? null },
+        include: withStock,
+    });
 };
 
-export const deleteProduct = async (id) => {
-    const deletedProduct = await prisma.product.update({ where: { id, deletedAt: null }, data: { deletedAt: new Date() }});
-    return deletedProduct;
+export const updateProduct = async (id, { name, price, categoryId }) => {
+    await assertCategory(categoryId);
+    return prisma.product.update({
+        where: { id, deletedAt: null },
+        data: { name, price, categoryId },
+        include: withStock,
+    });
 };
 
-
+export const deleteProduct = async (id) =>
+    prisma.product.update({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });

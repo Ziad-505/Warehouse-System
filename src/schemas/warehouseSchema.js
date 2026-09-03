@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { idParam } from "./common.js";
-
+import { idParam, listQuery } from "./common.js";
 
 export const warehouseIdParam = idParam;
+export const warehouseListQuery = listQuery;
 
 export const createWarehouseBody = z.strictObject({
     name: z.string().trim().min(1, "name is required").max(100),
