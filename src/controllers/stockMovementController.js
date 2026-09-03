@@ -15,3 +15,8 @@ export const transferStock = async (req, res) => {
     });
     res.status(201).json(result);
 };
+
+export const getMovements = async (req, res) => {
+    const result = await stockMovementService.getMovements(req.valid.query);
+    res.json(result);
+};

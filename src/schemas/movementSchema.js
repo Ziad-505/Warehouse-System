@@ -36,3 +36,21 @@ export const transferBody = z.strictObject({
     message: "Cannot transfer to the same warehouse",
     path: ["toWarehouseId"],
 });
+// A dedicated list schema rather than the shared listQuery: `search` means
+// nothing on a movement, and these filters map onto the three composite
+// indexes built in Stage 3.
+export const movementListQuery = z
+    .object({
+        page: z.coerce.number().int().positive().default(1),
+        limit: z.coerce.number().int().positive().max(100).default(20),
+        productId: z.coerce.number().int().positive().optional(),
+        warehouseId: z.coerce.number().int().positive().optional(),
+        userId: z.coerce.number().int().positive().optional(),
+        type: z.enum(["IN", "OUT", "ADJUST"]).optional(),
+        from: z.coerce.date().optional(),
+        to: z.coerce.date().optional(),
+    })
+    .refine((q) => !q.from || !q.to || q.from <= q.to, {
+        message: "from must be before to",
+        path: ["to"],
+    });
