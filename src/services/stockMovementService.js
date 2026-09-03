@@ -20,7 +20,7 @@ const assertWarehouse = async (tx, warehouseId, message = "Warehouse not found")
  * movement. Runs inside a caller-supplied transaction so a transfer can call it
  * twice and have both halves commit or neither.
  */
-const applyMovement = async (tx, { productId, warehouseId, type, quantity, reason }) => {
+const applyMovement = async (tx, { productId, warehouseId, type, quantity, reason, userId }) => {
     const key = levelKey(productId, warehouseId);
 
     const existing = await tx.stockLevel.findUnique({ where: key });
@@ -52,6 +52,7 @@ const applyMovement = async (tx, { productId, warehouseId, type, quantity, reaso
             reason,
             productId,
             warehouseId,
+            userId,
             quantityBefore,
             quantityAfter: level.quantity,
         },
@@ -60,14 +61,14 @@ const applyMovement = async (tx, { productId, warehouseId, type, quantity, reaso
     return { movement, quantity: level.quantity };
 };
 
-export const createStockMovement = async ({ productId, warehouseId, type, quantity, reason }) =>
+export const createStockMovement = async ({ productId, warehouseId, type, quantity, reason, userId }) =>
     prisma.$transaction(async (tx) => {
         await assertProduct(tx, productId);
         await assertWarehouse(tx, warehouseId);
-        return applyMovement(tx, { productId, warehouseId, type, quantity, reason });
+        return applyMovement(tx, { productId, warehouseId, type, quantity, reason, userId });
     });
 
-export const transferStock = async ({ productId, fromWarehouseId, toWarehouseId, quantity, reason }) =>
+export const transferStock = async ({ productId, fromWarehouseId, toWarehouseId, quantity, reason, userId }) =>
     prisma.$transaction(async (tx) => {
         await assertProduct(tx, productId);
         await assertWarehouse(tx, fromWarehouseId, "Source warehouse not found");
@@ -86,6 +87,7 @@ export const transferStock = async ({ productId, fromWarehouseId, toWarehouseId,
                 type: op.type,
                 quantity,
                 reason,
+                userId,
             });
         }
 

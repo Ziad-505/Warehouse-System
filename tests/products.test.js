@@ -1,11 +1,10 @@
 import { describe, it, expect } from "vitest";
-import request from "supertest";
-import app from "../src/app.js";
+import { api } from "./helpers.js";
 import { makeCategory, makeWarehouse, makeProduct, makeStockLevel } from "./factories.js";
 
 describe("POST /api/products", () => {
     it("creates a product", async () => {
-        const res = await request(app).post("/api/products").send({ name: "Hammer", price: 99.5 });
+        const res = await api().post("/api/products").send({ name: "Hammer", price: 99.5 });
 
         expect(res.status).toBe(201);
         expect(res.body).toMatchObject({ name: "Hammer" });
@@ -15,7 +14,7 @@ describe("POST /api/products", () => {
     });
 
     it("starts a product with no stock anywhere", async () => {
-        const res = await request(app).post("/api/products").send({ name: "Hammer", price: 10 });
+        const res = await api().post("/api/products").send({ name: "Hammer", price: 10 });
 
         expect(res.status).toBe(201);
         expect(res.body.stockLevels).toEqual([]);
@@ -24,13 +23,13 @@ describe("POST /api/products", () => {
     // Stock only moves through /api/stock-movements, so the audit trail is
     // complete. Accepting it here would let a client write stock with no record.
     it("rejects quantity", async () => {
-        const res = await request(app).post("/api/products").send({ name: "Hammer", price: 10, quantity: 5 });
+        const res = await api().post("/api/products").send({ name: "Hammer", price: 10, quantity: 5 });
         expect(res.status).toBe(400);
     });
 
     it("rejects warehouseId", async () => {
         const warehouse = await makeWarehouse();
-        const res = await request(app)
+        const res = await api()
             .post("/api/products")
             .send({ name: "Hammer", price: 10, warehouseId: warehouse.id });
         expect(res.status).toBe(400);
@@ -38,7 +37,7 @@ describe("POST /api/products", () => {
 
     it("links a product to a category", async () => {
         const category = await makeCategory();
-        const res = await request(app)
+        const res = await api()
             .post("/api/products")
             .send({ name: "Screwdriver", price: 45, categoryId: category.id });
 
@@ -47,7 +46,7 @@ describe("POST /api/products", () => {
     });
 
     it("rejects a categoryId that does not exist", async () => {
-        const res = await request(app)
+        const res = await api()
             .post("/api/products")
             .send({ name: "Hammer", price: 10, categoryId: 999999 });
 
@@ -56,25 +55,25 @@ describe("POST /api/products", () => {
     });
 
     it("trims whitespace off the name", async () => {
-        const res = await request(app).post("/api/products").send({ name: "  Hammer  ", price: 10 });
+        const res = await api().post("/api/products").send({ name: "  Hammer  ", price: 10 });
         expect(res.status).toBe(201);
         expect(res.body.name).toBe("Hammer");
     });
 
     it("rejects an empty body", async () => {
-        const res = await request(app).post("/api/products").send({});
+        const res = await api().post("/api/products").send({});
         expect(res.status).toBe(400);
         expect(res.body.error).toBe("Validation failed");
     });
 
     it("rejects a negative price", async () => {
-        const res = await request(app).post("/api/products").send({ name: "Hammer", price: -5 });
+        const res = await api().post("/api/products").send({ name: "Hammer", price: -5 });
         expect(res.status).toBe(400);
     });
 
     it("rejects a duplicate name with 409", async () => {
-        await request(app).post("/api/products").send({ name: "Hammer", price: 10 });
-        const res = await request(app).post("/api/products").send({ name: "Hammer", price: 10 });
+        await api().post("/api/products").send({ name: "Hammer", price: 10 });
+        const res = await api().post("/api/products").send({ name: "Hammer", price: 10 });
         expect(res.status).toBe(409);
     });
 });
@@ -86,7 +85,7 @@ describe("GET /api/products/:id", () => {
         await makeStockLevel(product.id, a.id, 40);
         await makeStockLevel(product.id, b.id, 6);
 
-        const res = await request(app).get(`/api/products/${product.id}`);
+        const res = await api().get(`/api/products/${product.id}`);
 
         expect(res.status).toBe(200);
         expect(res.body.stockLevels).toHaveLength(2);
@@ -99,12 +98,12 @@ describe("GET /api/products/:id", () => {
     });
 
     it("rejects a non-numeric id with 400", async () => {
-        const res = await request(app).get("/api/products/abc");
+        const res = await api().get("/api/products/abc");
         expect(res.status).toBe(400);
     });
 
     it("returns 404 for an id that does not exist", async () => {
-        const res = await request(app).get("/api/products/999999");
+        const res = await api().get("/api/products/999999");
         expect(res.status).toBe(404);
     });
 });
@@ -113,7 +112,7 @@ describe("GET /api/products", () => {
     it("paginates and reports the total", async () => {
         for (const n of [1, 2, 3]) await makeProduct({ name: `Paged-${n}` });
 
-        const res = await request(app).get("/api/products?limit=2");
+        const res = await api().get("/api/products?limit=2");
 
         expect(res.status).toBe(200);
         expect(res.body.data).toHaveLength(2);
@@ -121,7 +120,7 @@ describe("GET /api/products", () => {
     });
 
     it("rejects a limit above the cap", async () => {
-        const res = await request(app).get("/api/products?limit=5000");
+        const res = await api().get("/api/products?limit=5000");
         expect(res.status).toBe(400);
     });
 });
@@ -129,7 +128,7 @@ describe("GET /api/products", () => {
 describe("PATCH /api/products/:id", () => {
     it("updates the name", async () => {
         const product = await makeProduct();
-        const res = await request(app).patch(`/api/products/${product.id}`).send({ name: "Sledgehammer" });
+        const res = await api().patch(`/api/products/${product.id}`).send({ name: "Sledgehammer" });
 
         expect(res.status).toBe(200);
         expect(res.body.name).toBe("Sledgehammer");
@@ -137,13 +136,13 @@ describe("PATCH /api/products/:id", () => {
 
     it("rejects quantity", async () => {
         const product = await makeProduct();
-        const res = await request(app).patch(`/api/products/${product.id}`).send({ quantity: 500 });
+        const res = await api().patch(`/api/products/${product.id}`).send({ quantity: 500 });
         expect(res.status).toBe(400);
     });
 
     it("rejects an empty patch", async () => {
         const product = await makeProduct();
-        const res = await request(app).patch(`/api/products/${product.id}`).send({});
+        const res = await api().patch(`/api/products/${product.id}`).send({});
         expect(res.status).toBe(400);
     });
 });

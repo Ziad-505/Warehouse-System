@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import request from "supertest";
-import app from "../src/app.js";
+import { api } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 import { makeStockedProduct, makeProduct, makeWarehouse } from "./factories.js";
 
@@ -16,7 +15,7 @@ describe("concurrent stock movements", () => {
         // 20 simultaneous requests, each taking 1 unit, against 10 in stock.
         const responses = await Promise.all(
             Array.from({ length: 20 }, () =>
-                request(app)
+                api()
                     .post("/api/stock-movements")
                     .send({ productId: product.id, warehouseId: warehouse.id, type: "OUT", quantity: 1 })
             )
@@ -38,9 +37,9 @@ describe("concurrent stock movements", () => {
         const product = await makeProduct();
         const [a, b] = await Promise.all([makeWarehouse(), makeWarehouse()]);
 
-        await request(app).post("/api/stock-movements")
+        await api().post("/api/stock-movements")
             .send({ productId: product.id, warehouseId: a.id, type: "IN", quantity: 5 });
-        await request(app).post("/api/stock-movements")
+        await api().post("/api/stock-movements")
             .send({ productId: product.id, warehouseId: b.id, type: "IN", quantity: 30 });
 
         expect((await levelFor(product.id, a.id)).quantity).toBe(5);
@@ -57,7 +56,7 @@ describe("concurrent stock movements", () => {
 
         const responses = await Promise.all(
             Array.from({ length: 20 }, () =>
-                request(app)
+                api()
                     .post("/api/stock-movements")
                     .send({ productId: product.id, warehouseId: warehouse.id, type: "IN", quantity: 1 })
             )

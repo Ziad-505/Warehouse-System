@@ -11,7 +11,8 @@
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "generate": "prisma generate",
-    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev && prisma generate",
+    "migrate": "prisma migrate deploy && prisma generate",
     "studio": "prisma studio",
     "seed": "node prisma/seed.js",
     "smoke": "bash scripts/smoke.sh"
@@ -22,8 +23,10 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
     "zod": "^4.4.3"
   },
