@@ -13,56 +13,77 @@ datasource db {
 }
 
 model Warehouse {
-  id            Int             @id @default(autoincrement())
-  name          String          @unique
-  location      String?     
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  location String?
 
-  products      Product[]
+  stockLevels StockLevel[]
+  movements   StockMovement[]
 
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?       
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
 model Category {
-  id            Int             @id @default(autoincrement())
-  name          String          @unique
-  products      Product[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }
 
-
-
 model Product {
-  id            Int             @id @default(autoincrement())
-  name          String          @unique
-  price         Decimal         @db.Decimal(10, 2)        
-  quantity       Int             @default(0)    
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  price Decimal @db.Decimal(10, 2)
 
-  categoryId    Int?
-  category      Category?       @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
 
-  warehouseId   Int?
-  warehouse     Warehouse?      @relation(fields: [warehouseId], references: [id])
+  stockLevels StockLevel[]
 
-  movements     StockMovement[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?         
+  movements StockMovement[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  deletedAt DateTime?
 
+  @@index([categoryId])
 }
 
 model StockMovement {
-  id            Int             @id @default(autoincrement())
-  type          MovementType
+  id             Int          @id @default(autoincrement())
+  type           MovementType
   quantity       Int
-  reason        String?
+  reason         String?
+  quantityBefore Int
+  quantityAfter  Int
 
-  productId     Int
-  product       Product         @relation(fields: [productId], references: [id])
-  createdAt     DateTime        @default(now())
+  warehouseId Int
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt])
+  @@index([warehouseId, createdAt])
+}
+
+model StockLevel {
+  productId   Int
+  warehouseId Int
+  quantity    Int @default(0)
+
+  product   Product   @relation(fields: [productId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([productId, warehouseId])
+  @@index([warehouseId])
 }
 
 enum MovementType {

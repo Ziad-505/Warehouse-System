@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idParam } from "./common.js";
+import { idParam, listQuery } from "./common.js";
 
 
 export const categoryIdParam = idParam;
@@ -14,9 +14,4 @@ export const updateCategoryBody = createCategoryBody
         message: "Provide at least one field to update",
     });
 
-
-export const listQuery = z.object({
-    page: z.coerce.number().int().positive().default(1),
-    limit: z.coerce.number().int().positive().max(100).default(20),
-    search: z.string().trim().min(1).optional(),
-});    
+export const categoryListQuery = listQuery;
