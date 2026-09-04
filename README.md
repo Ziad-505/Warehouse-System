@@ -2,9 +2,15 @@
 
 [![CI](https://github.com/Ziad-505/Warehouse-System/actions/workflows/ci.yml/badge.svg)](https://github.com/Ziad-505/Warehouse-System/actions/workflows/ci.yml)
 
+**Live API — [warehouse-system-qef2.onrender.com/api/docs](https://warehouse-system-qef2.onrender.com/api/docs)**
+Demo login `demo@warehouse.dev` / `demo-password-1234` — read-only.
+
 Inventory API for multi-warehouse stock: products, per-warehouse stock levels,
 audited stock movements and transfers, with JWT authentication and role-based
 access.
+
+> Running on free tiers. The first request after ~15 minutes of inactivity takes
+> up to a minute while the service and the database wake up.
 
 Node 22+ · Express 5 · PostgreSQL 17 · Prisma 7 · Zod 4 · Vitest
 
