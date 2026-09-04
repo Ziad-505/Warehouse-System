@@ -33,9 +33,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
 
-      - run: npm ci
+      # `npm ci` used to take 301 of a 331 second run. It was not the download
+      # -- setup-node's npm cache was already hitting, 109 MB at 200 MB/s. It was
+      # `npm audit`, which npm runs at the end of every install: a network round
+      # trip checking all 329 packages against the advisory database. Disabling
+      # it below took the same step to 8 seconds.
+      #
+      # Caching node_modules then skips even that. The key pins the OS and Node
+      # major alongside the lockfile hash, because argon2 is a native module and
+      # its binary is not portable between either.
+      #
+      # Auditing still matters -- it just belongs in `npm audit` on its own
+      # schedule, not blocking every test run.
+      - name: Cache node_modules
+        id: modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
       - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npm test
