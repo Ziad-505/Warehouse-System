@@ -33,9 +33,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
 
-      - run: npm ci
+      # setup-node's `cache: npm` caches the npm DOWNLOAD cache, which was
+      # already hitting -- 109 MB restored at 200 MB/s. The five minutes went on
+      # npm unpacking and linking 329 packages, most of that Prisma's engine
+      # binaries. Caching node_modules itself skips that work entirely.
+      #
+      # The key pins the OS and Node major alongside the lockfile hash, because
+      # argon2 is a native module and its binary is not portable between them.
+      - name: Cache node_modules
+        id: modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
       - run: npx prisma generate
       - run: npx prisma migrate deploy
       - run: npm test
