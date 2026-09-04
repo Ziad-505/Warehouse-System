@@ -34,13 +34,18 @@ jobs:
         with:
           node-version: 24
 
-      # setup-node's `cache: npm` caches the npm DOWNLOAD cache, which was
-      # already hitting -- 109 MB restored at 200 MB/s. The five minutes went on
-      # npm unpacking and linking 329 packages, most of that Prisma's engine
-      # binaries. Caching node_modules itself skips that work entirely.
+      # `npm ci` used to take 301 of a 331 second run. It was not the download
+      # -- setup-node's npm cache was already hitting, 109 MB at 200 MB/s. It was
+      # `npm audit`, which npm runs at the end of every install: a network round
+      # trip checking all 329 packages against the advisory database. Disabling
+      # it below took the same step to 8 seconds.
       #
-      # The key pins the OS and Node major alongside the lockfile hash, because
-      # argon2 is a native module and its binary is not portable between them.
+      # Caching node_modules then skips even that. The key pins the OS and Node
+      # major alongside the lockfile hash, because argon2 is a native module and
+      # its binary is not portable between either.
+      #
+      # Auditing still matters -- it just belongs in `npm audit` on its own
+      # schedule, not blocking every test run.
       - name: Cache node_modules
         id: modules
         uses: actions/cache@v4
