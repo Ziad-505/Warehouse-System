@@ -1,0 +1,34 @@
+# Render Blueprint. Committing this means the service is defined in the repo
+# rather than clicked together in a dashboard -- the same reason your migrations
+# live in git instead of being applied by hand.
+services:
+  - type: web
+    name: warehouse-system
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
+
+    # Render will not route traffic to a new deploy until this returns 200. Your
+    # health check runs SELECT 1, so that gate means "can actually serve".
+    healthCheckPath: /api/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: CORS_ORIGIN
+        value: "*"
+
+      # Pinned to match the Dockerfile's EXPOSE so Render's port detection has
+      # nothing to guess at.
+      - key: PORT
+        value: 3000
+
+      # sync: false means "prompt me, never store this in git". Render will ask
+      # for both the first time the blueprint is applied.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

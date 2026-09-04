@@ -1,22 +1,26 @@
-# --- deps: production node_modules only -------------------------------------
-FROM node:24-alpine AS deps
-WORKDIR /app
-COPY package*.json ./
-# --ignore-scripts because npm blocks lifecycle scripts by default now anyway,
-# and we run prisma generate explicitly in the next stage.
-RUN npm ci --omit=dev --ignore-scripts
+# node:*-slim (Debian) rather than alpine: argon2 is a native module and its
+# prebuilt binaries cover glibc far better than musl. Alpine would mean either a
+# node-gyp toolchain in the image or a build that fails on someone else's machine.
 
-# --- build: generate the Prisma client (needs the prisma CLI, a devDependency)
-FROM node:24-alpine AS build
+# --- deps: exactly what the app needs at runtime ----------------------------
+FROM node:24-slim AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+# Scripts are NOT ignored here on purpose: argon2 unpacks its prebuilt binary
+# and @prisma/engines fetches the schema engine that `migrate deploy` needs.
+RUN npm ci --omit=dev
+
+# --- build: generate the Prisma client --------------------------------------
+FROM node:24-slim AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
 COPY prisma ./prisma
 COPY prisma7.config.ts ./
 RUN npx prisma generate
 
-# --- runtime: only what is needed to run ------------------------------------
-FROM node:24-alpine AS runtime
+# --- runtime -----------------------------------------------------------------
+FROM node:24-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -26,8 +30,8 @@ COPY package*.json prisma7.config.ts ./
 COPY prisma ./prisma
 COPY src ./src
 
-# The node image ships a non-root `node` user. Running as root inside a
-# container means a container escape starts with root on the host.
+# The node image ships a non-root `node` user. A container escape that starts as
+# root is a very different incident from one that starts unprivileged.
 USER node
 
 EXPOSE 3000
