@@ -1,5 +1,17 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/prisma.js";
+import { hashPassword } from "../src/lib/password.js";
+
+// The demo account is deliberately VIEWER: its password is published in the
+// README, so read-only is the only responsible role for it. An admin is seeded
+// only when SEED_ADMIN_PASSWORD is provided -- a real credential does not
+// belong in a repository.
+const users = [
+    { email: "demo@warehouse.dev", password: "demo-password-1234", role: "VIEWER" },
+    ...(process.env.SEED_ADMIN_PASSWORD
+        ? [{ email: "admin@warehouse.dev", password: process.env.SEED_ADMIN_PASSWORD, role: "ADMIN" }]
+        : []),
+];
 
 const categories = [{ name: "Tools" }, { name: "Electronics" }, { name: "Consumables" }];
 
@@ -20,11 +32,19 @@ const products = [
 
 const seed = async () => {
     // Children before parents, or the foreign keys refuse the delete.
+    await prisma.refreshToken.deleteMany({});
     await prisma.stockMovement.deleteMany({});
     await prisma.stockLevel.deleteMany({});
     await prisma.product.deleteMany({});
     await prisma.category.deleteMany({});
     await prisma.warehouse.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    for (const { email, password, role } of users) {
+        await prisma.user.create({
+            data: { email, passwordHash: await hashPassword(password), role },
+        });
+    }
 
     const categoryByName = new Map();
     for (const data of categories) {
@@ -58,8 +78,8 @@ const seed = async () => {
     }
 
     console.log(
-        `Seeded ${categories.length} categories, ${warehouses.length} warehouses, ` +
-            `${products.length} products, ${levels} stock levels.`
+        `Seeded ${users.length} users, ${categories.length} categories, ` +
+            `${warehouses.length} warehouses, ${products.length} products, ${levels} stock levels.`
     );
 };
 
